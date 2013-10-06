@@ -19,7 +19,7 @@ Installation
 
 It's a cabal package, so
 
-    $ cabal configure && cabal install
+    $ cabal install bert
 
 should do the trick.
 
