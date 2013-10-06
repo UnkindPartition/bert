@@ -11,6 +11,12 @@ description:   Implements the BERT serialization and RPC protocols
                described at <http://bert-rpc.org/>.
 maintainer:    Roman Cheplyaka <roma@ro-che.info>
 copyright:     (c) 2009-2011 marius a. eriksen
+homepage:      https://github.com/feuerbach/bert
+bug-reports:   https://github.com/feuerbach/bert/issues
+
+source-repository head
+  type: git
+  location: git@github.com:feuerbach/bert.git
 
 library
   build-depends: base == 4.*, containers >= 0.2, 
