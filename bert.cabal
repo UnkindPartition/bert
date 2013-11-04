@@ -1,4 +1,4 @@
-cabal-version: >= 1.6
+cabal-version: >= 1.8
 name:          bert
 version:       1.1.2.1
 build-type:    Simple
@@ -19,6 +19,7 @@ source-repository head
   location: git@github.com:feuerbach/bert.git
 
 library
+  hs-source-dirs:   src
   build-depends: base == 4.*, containers >= 0.2, 
                  bytestring >= 0.9, binary >= 0.5, mtl >= 1.1,
                  network >= 2.2, unix >= 2.0, time >= 1.1, 
@@ -40,4 +41,5 @@ library
   ghc-options: -fwarn-unused-imports
 
 executable bert
+  build-depends: base == 4.*, bert
   main-is: bert.hs
