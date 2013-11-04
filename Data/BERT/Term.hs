@@ -18,27 +18,22 @@ module Data.BERT.Term
   ) where
 
 import Control.Monad.Error
-import Control.Monad (forM_, replicateM, liftM2, liftM3, liftM4)
-import Control.Applicative ((<$>))
-import Data.Bits (shiftR, (.&.))
-import Data.Char (chr, isAsciiLower, isAscii)
-import Data.Binary (Binary(..), Word8)
-import Data.Binary.Put (
-  Put, putWord8, putWord16be, 
-  putWord32be, putLazyByteString)
-import Data.Binary.Get (
-  Get, getWord8, getWord16be, getWord32be,
-  getLazyByteString)
-import Data.List (intercalate)
-import Data.Time (UTCTime(..), diffUTCTime, addUTCTime, Day(..))
+import Control.Applicative
+import Data.Bits
+import Data.Char
+import Data.Binary
+import Data.Binary.Put
+import Data.Binary.Get
+import Data.List
+import Data.Time
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as B
 import qualified Data.ByteString.Lazy.Char8 as C
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Text.Printf (printf)
-import Data.BERT.Types (Term(..))
-import Data.BERT.Parser (parseTerm)
+import Text.Printf
+import Data.BERT.Types
+import Data.BERT.Parser
 
 -- The 0th-hour as per the BERT spec.
 zeroHour = UTCTime (read "1970-01-01") 0

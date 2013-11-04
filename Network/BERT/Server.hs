@@ -18,13 +18,12 @@ module Network.BERT.Server
   , serve
   ) where
 
-import Control.Concurrent (forkIO)
-import Control.Monad.Trans (liftIO)
+import Control.Concurrent
+import Control.Monad.Trans
 import Network.BERT.Transport
 import Data.ByteString.Lazy.Char8 as C
-import Data.BERT (Term(..))
-import Data.Conduit
-import Text.Printf (printf)
+import Data.BERT
+import Text.Printf
 
 data DispatchResult
   = Success Term

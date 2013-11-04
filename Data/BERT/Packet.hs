@@ -14,17 +14,17 @@ module Data.BERT.Packet
   , decodePackets
   ) where
 
-import Control.Monad (liftM)
+import Control.Monad
 import Data.ByteString.Lazy as L
 import Data.ByteString as BS
-import Data.Binary (Binary(..), Get(..), encode, decode)
-import Data.Binary.Put (putWord32be, putLazyByteString)
-import Data.Binary.Get (getWord32be, getLazyByteString, runGet, runGetState)
+import Data.Binary
+import Data.Binary.Put
+import Data.Binary.Get
 import Data.Conduit
 import Data.Conduit.Serialization.Binary
 
-import Data.BERT.Term
-import Data.BERT.Types (Term(..))
+import Data.BERT.Term ()
+import Data.BERT.Types
 
 -- | A single BERP. Little more than a wrapper for a term.
 data Packet

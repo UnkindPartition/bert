@@ -27,26 +27,19 @@ module Network.BERT.Transport
   , servet
   ) where
 
-import Control.Monad (forever)
+import Control.Monad
 import Control.Applicative
 import Control.Monad.Reader
-import Network.URI (URI(..), URIAuth(..), parseURI)
-import Network.Socket (
-  Socket(..), Family(..), SockAddr(..), SocketType(..), 
-  SocketOption(..), AddrInfo(..), connect, socket, sClose, 
-  setSocketOption, bindSocket, listen, accept, iNADDR_ANY, 
-  getAddrInfo, defaultHints)
-import Data.Maybe (fromJust)
-import Data.Binary (encode, decode)
-import qualified Data.ByteString.Lazy as L
-import qualified Data.ByteString as BS
+import Network.URI
+import Network.Socket
+import Data.Maybe
+import Data.Binary
 import Data.Conduit
 import Data.Conduit.Network
 import qualified Network.Socket.ByteString.Lazy as LS
 import qualified System.Posix.Signals as Sig
 
-import Data.BERT (Term(..), BERT(..), Packet(..))
-import Data.BERT.Packet
+import Data.BERT
 
 -- | Defines a transport endpoint. Create with 'fromURI'.
 data Transport

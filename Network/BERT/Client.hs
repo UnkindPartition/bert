@@ -14,9 +14,8 @@ module Network.BERT.Client
   ( Call, call
   ) where
 
-import Data.Maybe
-import Data.BERT (Term(..), Packet(..), BERT(..))
-import Network.BERT.Transport (Transport, withTransport, sendt, recvt)
+import Data.BERT
+import Network.BERT.Transport
 
 data Error
   = ClientError String

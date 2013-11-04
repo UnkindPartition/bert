@@ -10,10 +10,9 @@
 module Main where
 
 import System.Console.GetOpt
-import System.Environment (getArgs, getProgName)
-import Data.Maybe (maybe)
-import Text.Printf (printf)
-import Data.BERT (Term(..))
+import System.Environment
+import Text.Printf
+import Data.BERT
 import qualified Network.BERT as Net
 
 data Flags

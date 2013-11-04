@@ -13,15 +13,13 @@ module Data.BERT.Parser
   ( parseTerm
   ) where
 
-import Data.Char (ord)
+import Data.Char
 import Control.Applicative
-import Control.Monad (MonadPlus(..), ap)
-import Numeric (readSigned, readFloat, readDec)
-import Control.Monad (liftM)
+import Numeric
 import Text.ParserCombinators.Parsec hiding (many, optional, (<|>))
 import qualified Data.ByteString.Lazy as B
 import qualified Data.ByteString.Lazy.Char8 as C
-import Data.BERT.Types (Term(..))
+import Data.BERT.Types
 
 --instance Applicative (GenParser s a) where
 --  pure  = return
