@@ -11,14 +11,17 @@
 module Data.BERT.Packet 
   ( Packet(..)
   , fromPacket
-  , packets
+  , decodePackets
   ) where
 
 import Control.Monad (liftM)
 import Data.ByteString.Lazy as L
+import Data.ByteString as BS
 import Data.Binary (Binary(..), Get(..), encode, decode)
 import Data.Binary.Put (putWord32be, putLazyByteString)
 import Data.Binary.Get (getWord32be, getLazyByteString, runGet, runGetState)
+import Data.Conduit
+import Data.Conduit.Serialization.Binary
 
 import Data.BERT.Term
 import Data.BERT.Types (Term(..))
@@ -43,12 +46,6 @@ getPacket =
   getLazyByteString              >>= 
   return . Packet . decode
 
--- | From a lazy bytestring, return a (lazy) list of packets. This is
--- convenient for parsing a stream of adjacent packets. (Eg. by using
--- some form of @getContents@ to get a @ByteString@ out of a data
--- source).
-packets :: L.ByteString -> [Packet]
-packets b
-  | L.null b = []
-  | otherwise = p:packets b' 
-      where (p, b', _) = runGetState getPacket b 0
+-- | Conduit which decodes a binary stream into BERT packets
+decodePackets :: MonadThrow m => Conduit BS.ByteString m Packet
+decodePackets = conduitGet getPacket

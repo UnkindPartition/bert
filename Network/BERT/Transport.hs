@@ -22,15 +22,14 @@ module Network.BERT.Transport
   ( Transport, fromURI, fromHostPort
   -- ** Transport monad
   , TransportM, withTransport
-  , sendt, recvt
+  , sendt, recvt, recvtForever
   -- ** Server side
   , servet
   ) where
 
 import Control.Monad (forever)
-import Control.Monad.State (
-  StateT, MonadIO, MonadState, runStateT, 
-  modify, gets, liftIO)
+import Control.Applicative
+import Control.Monad.Reader
 import Network.URI (URI(..), URIAuth(..), parseURI)
 import Network.Socket (
   Socket(..), Family(..), SockAddr(..), SocketType(..), 
@@ -40,12 +39,14 @@ import Network.Socket (
 import Data.Maybe (fromJust)
 import Data.Binary (encode, decode)
 import qualified Data.ByteString.Lazy as L
-import qualified Data.ByteString as B
+import qualified Data.ByteString as BS
+import Data.Conduit
+import Data.Conduit.Network
 import qualified Network.Socket.ByteString.Lazy as LS
 import qualified System.Posix.Signals as Sig
 
 import Data.BERT (Term(..), BERT(..), Packet(..))
-import Data.BERT.Packet (packets)
+import Data.BERT.Packet
 
 -- | Defines a transport endpoint. Create with 'fromURI'.
 data Transport
@@ -53,15 +54,9 @@ data Transport
   | TcpServerTransport Socket
     deriving (Show, Eq)
 
-data TransportState
-  = TransportState {
-      state_packets :: [Packet]
-    , state_socket  :: Socket
-    }
-
 newtype TransportM a
-  = TransportM (StateT TransportState IO a)
-    deriving (Monad, MonadIO, MonadState TransportState)
+  = TransportM { runTransportM :: Sink Packet (ReaderT Socket IO) a }
+    deriving (Monad, MonadIO)
 
 -- | Create a transport from the given URI.
 fromURI :: String -> IO Transport
@@ -109,32 +104,28 @@ resolve host = do
 -- | Execute the given transport monad action in the context of the
 -- passed transport.
 withTransport :: Transport -> TransportM a -> IO a
-withTransport (TcpTransport sa) m = do
-  sock <- socket AF_INET Stream 0
-  connect sock sa
-  withTransport_ sock m
-withTransport (TcpServerTransport sock) m =
-  withTransport_ sock m
+withTransport transport (TransportM m) = do
+  sock <-
+    case transport of
+      TcpTransport sa -> do
+        sock <- socket AF_INET Stream 0
+        connect sock sa
+        return sock
+      TcpServerTransport sock -> return sock
 
-withTransport_ sock (TransportM m) = do
-  ps <- LS.getContents sock >>= return . packets
-  (result, _) <- runStateT m TransportState 
-                             { state_packets = ps 
-                             , state_socket  = sock}
-  sClose sock
-  return result
+  flip runReaderT sock $
+    sourceSocket sock $= decodePackets $$ m
 
 -- | Send a term (inside the transport monad)
 sendt :: Term -> TransportM ()
-sendt t = do
-  sock <- gets state_socket
+sendt t = TransportM $ do
+  sock <- ask
   liftIO $ LS.sendAll sock $ encode (Packet t)
   return ()
 
 -- | Receive a term (inside the transport monad)
-recvt :: TransportM Term
-recvt = do
-  ps <- gets state_packets
-  modify $ \state -> state { state_packets = drop 1 ps }
-  let Packet t = head ps
-  return t
+recvt :: TransportM (Maybe Term)
+recvt = TransportM $ fmap fromPacket <$> await
+
+recvtForever :: (Term -> TransportM a) -> TransportM ()
+recvtForever f = TransportM $ awaitForever $ runTransportM . f . fromPacket

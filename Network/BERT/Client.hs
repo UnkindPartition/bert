@@ -14,6 +14,7 @@ module Network.BERT.Client
   ( Call, call 
   ) where
 
+import Data.Maybe
 import Data.BERT (Term(..), Packet(..), BERT(..))
 import Network.BERT.Transport (Transport, withTransport, sendt, recvt)
 
@@ -38,13 +39,16 @@ call transport mod fun args =
   withTransport transport $ do
     sendt $ TupleTerm [AtomTerm "call", AtomTerm mod, AtomTerm fun, 
                        ListTerm $ map showBERT args]
-    recvt >>= handle
+    recvAndHandle
   where
     handle (TupleTerm [AtomTerm "reply", reply]) =
       return $ either (const . Left $ ClientError "decode failed") Right
              $ readBERT reply
     handle (TupleTerm (AtomTerm "info":_)) = 
-      recvt >>= handle  -- We don't yet handle info directives.
+      recvAndHandle  -- We don't yet handle info directives.
     handle t@(TupleTerm (AtomTerm "error":_)) =
       return $ Left . ServerError $ t
     handle t = fail $ "unknown reply " ++ (show t)
+
+    recvAndHandle =
+      recvt >>= maybe (fail "No answer") handle

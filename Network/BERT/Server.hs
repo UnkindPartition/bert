@@ -20,9 +20,10 @@ module Network.BERT.Server
 
 import Control.Concurrent (forkIO)
 import Control.Monad.Trans (liftIO)
-import Network.BERT.Transport (Transport, withTransport, servet, recvt, sendt)
+import Network.BERT.Transport
 import Data.ByteString.Lazy.Char8 as C
 import Data.BERT (Term(..))
+import Data.Conduit
 import Text.Printf (printf)
 
 data DispatchResult
@@ -41,12 +42,12 @@ serve transport dispatch =
   servet transport $ \t ->
     (forkIO $ withTransport t $ handleCall dispatch) >> return ()
 
-handleCall dispatch = recvt >>= handle
+handleCall dispatch = recvtForever handle
   where
     handle (TupleTerm [AtomTerm "info", AtomTerm "stream", _]) =
       sendErr "server" 0 "BERTError" "streams are unsupported" []
     handle (TupleTerm [AtomTerm "info", AtomTerm "cache", _]) =
-      recvt >>= handle  -- Ignore caching requests.
+      return () -- Ignore caching requests.
     handle (TupleTerm [
              AtomTerm "call", AtomTerm mod, 
              AtomTerm fun, ListTerm args]) = do
