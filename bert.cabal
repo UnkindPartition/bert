@@ -37,6 +37,7 @@ library
     Network.BERT.Transport
     Network.BERT.Client
     Network.BERT.Server
+  ghc-options: -fwarn-unused-imports
 
 executable bert
   main-is: bert.hs
