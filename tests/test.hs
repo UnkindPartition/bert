@@ -11,6 +11,7 @@ import qualified Data.Map as Map
 import Control.Concurrent
 import Control.Concurrent.Async
 import Network
+import System.Timeout
 
 import Test.Tasty
 import Test.Tasty.SmallCheck
@@ -66,6 +67,8 @@ simplePackets = testGroup "Simple packets"
 networkTests = testGroup "Network"
   [ networkTest1
   , networkTest2
+  , networkTest3
+  , networkTest4
   ]
 
 port :: PortNumber
@@ -92,3 +95,29 @@ networkTest2 = testCase "5 calls per connection" $ do
     forM_ [1..5] $ \x -> do
       result <- call c "mod" "f" [IntTerm 3, IntTerm x]
       result @?= Right (IntTerm (3+x))
+
+networkTest3 = testCase "5 sequential connections" $ do
+  t <- tcpServer port
+  let server = serve t $ \ "mod" "f" [IntTerm a, IntTerm b] -> return $ Success $ IntTerm (a+b)
+  withAsync server $ \_ -> do
+    delay
+    forM_ [1..5] $ \x -> do
+      c <- tcpClient "localhost" port
+      result <- call c "mod" "f" [IntTerm 3, IntTerm x]
+      result @?= Right (IntTerm (3+x))
+
+networkTest4 = testCase "100 simultaneous connections" $ do
+  t <- tcpServer port
+  let server = serve t $ \ "mod" "f" [IntTerm a, IntTerm b] ->
+        do
+          threadDelay (5*10^5) -- 0.5s delay
+          return $ Success $ IntTerm (a+b)
+  r <-
+    withAsync server $ \_ -> do
+      delay
+      timeout (10^6) $ do
+        flip mapConcurrently [1..100] $ \x -> do
+          c <- tcpClient "localhost" port
+          result <- call c "mod" "f" [IntTerm 3, IntTerm x]
+          result @?= Right (IntTerm (3+x))
+  maybe (assertFailure "Timed out!") (const $ return ()) r
