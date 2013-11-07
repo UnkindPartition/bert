@@ -7,6 +7,7 @@ module Network.BERT.Server
     -- ** Serve
     -- $example
   , serve
+  , tcpServer
   ) where
 
 import Control.Concurrent

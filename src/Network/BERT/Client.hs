@@ -1,7 +1,7 @@
 -- | BERT-RPC client (<http://bert-rpc.org/>). This implements the client RPC call logic.
 
 module Network.BERT.Client
-  ( Call, call
+  ( Call, call, tcpClient
   ) where
 
 import Data.BERT
