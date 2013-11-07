@@ -12,6 +12,7 @@ module Network.BERT.Server
 
 import Control.Concurrent
 import Control.Monad.Trans
+import Control.Exception
 import Network.BERT.Transport
 import Network.Socket
 import Data.ByteString.Lazy.Char8 as C
@@ -35,13 +36,15 @@ serve
   => s
   -> (String -> String -> [Term] -> IO DispatchResult)
   -> IO ()
-serve transport dispatch = do
+serve server dispatch = do
   -- Ignore sigPIPE, which can be delivered upon writing to a closed
   -- socket.
   Sig.installHandler Sig.sigPIPE Sig.Ignore Nothing
 
-  runServer transport $ \t ->
-    (forkIO $ runSession t $ handleCall dispatch) >> return ()
+  (runServer server $ \t ->
+    (forkIO $ runSession t $ handleCall dispatch) >> return ())
+    `finally`
+    cleanup server
 
 handleCall dispatch = recvtForever handle
   where

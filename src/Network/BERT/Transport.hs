@@ -21,7 +21,6 @@ module Network.BERT.Transport
 import Control.Monad
 import Control.Applicative
 import Control.Monad.Reader
-import Control.Exception
 import Network.Socket
 import Data.Conduit
 import Data.Conduit.Network
@@ -50,6 +49,10 @@ class Transport (ServerTransport s) => Server s where
   -- sort of a connection (represented by the transport) and then invoke
   -- the handling function
   runServer :: s -> (ServerTransport s -> IO ()) -> IO ()
+
+  -- | Free any resources that the server has acquired (such as the
+  -- listening socket)
+  cleanup :: s -> IO ()
 
 -- | The TCP transport
 data TCP = TCP {
@@ -98,6 +101,8 @@ instance Server TCPServer where
       (clientsock, _) <- accept sock
       setSocketOption clientsock NoDelay 1
       handle $ TCP clientsock
+
+  cleanup (TCPServer sock) = close sock
 
 -- | A simple 'TCPServer' constructor, listens on all local interfaces.
 --
