@@ -95,7 +95,7 @@ instance Server TCPServer where
   type ServerTransport TCPServer = TCP
 
   runServer (TCPServer sock) handle = do
-    listen sock 1
+    listen sock sOMAXCONN
 
     forever $ do
       (clientsock, _) <- accept sock
