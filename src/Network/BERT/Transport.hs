@@ -77,10 +77,10 @@ instance Transport TCP where
 -- transport. It can be used to make multiple requests.
 tcpClient :: HostName -> PortNumber -> IO TCP
 tcpClient host port = do
-  bracket (socket AF_INET Stream defaultProtocol) close $ \sock -> do
-    sa <- SockAddrInet port <$> resolve host
-    connect sock sa
-    return $ TCP sock
+  sock <- socket AF_INET Stream defaultProtocol
+  sa <- SockAddrInet port <$> resolve host
+  connect sock sa
+  return $ TCP sock
 
 -- | The TCP server
 data TCPServer = TCPServer {
