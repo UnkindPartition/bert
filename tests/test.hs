@@ -8,11 +8,18 @@ import Data.Map (Map)
 import qualified Data.ByteString.Lazy as L
 import qualified Data.Map as Map
 
+import Control.Concurrent
+import Control.Concurrent.Async
+import Network
+
 import Test.Tasty
 import Test.Tasty.SmallCheck
+import Test.Tasty.HUnit
 import Test.SmallCheck.Series
 
 import Data.BERT
+import Network.BERT.Client
+import Network.BERT.Server
 
 -- NB A better Char instance would help here — something like
 --
@@ -27,7 +34,11 @@ t a = Right a == (readBERT . decode . encode . showBERT) a
 -- value -> Term -> Packet -> encoded -> Packet -> Term -> value
 p a = Right a == (readBERT . fromPacket . decode . encode . Packet . showBERT) a
 
-main = defaultMain $ localOption (SmallCheckDepth 4) $ testGroup "Tests" [simpleTerms, simplePackets]
+main = defaultMain $ localOption (SmallCheckDepth 4) $
+  testGroup "Tests"
+    [ testGroup "Serialization" [simpleTerms, simplePackets]
+    , networkTests
+    ]
 
 simpleTerms = testGroup "Simple terms"
   [ testProperty "Bool" (t :: T Bool)
@@ -51,3 +62,22 @@ simplePackets = testGroup "Simple packets"
   , testProperty "(Map String String)" (p :: T (Map String String))
   , testProperty "(String, Int, Int, Int)" (p :: T (String, Int, Int, Int))
   ]
+
+networkTests = testGroup "Network"
+  [ networkTest1
+  ]
+
+port :: PortNumber
+port = 1911
+
+delay :: IO ()
+delay = threadDelay (10^5)
+
+networkTest1 = testCase "Simple call" $ do
+  t <- tcpServer port
+  let server = serve t $ \ "mod" "f" [IntTerm a] -> return $ Success $ IntTerm (a+1)
+  withAsync server $ \_ -> do
+    delay
+    c <- tcpClient "localhost" port
+    result <- call c "mod" "f" [IntTerm 3]
+    result @?= Right (IntTerm 4)

@@ -50,6 +50,9 @@ test-suite test
   build-depends:
     tasty >= 0.4,
     tasty-smallcheck,
+    tasty-hunit,
+    async,
+    network,
     bert,
     base,
     smallcheck,
