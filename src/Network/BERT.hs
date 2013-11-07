@@ -1,14 +1,4 @@
--- |
--- Module      : Network.BERT
--- Copyright   : (c) marius a. eriksen 2009
--- 
--- License     : BSD3
--- Maintainer  : marius@monkey.org
--- Stability   : experimental
--- Portability : GHC
--- 
--- BERT-RPC client (<http://bert-rpc.org/>). See
--- "Network.BERT.Transport" and "Network.BERT.RPC" for more details.
+-- | BERT-RPC client (<http://bert-rpc.org/>). See "Network.BERT.Transport" and "Network.BERT.RPC" for more details.
 module Network.BERT
   ( module Network.BERT.Transport
   , module Network.BERT.Client

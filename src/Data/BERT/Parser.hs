@@ -1,14 +1,5 @@
 {-# LANGUAGE OverlappingInstances, TypeSynonymInstances #-}
--- |
--- Module      : Data.BERT.Parser
--- Copyright   : (c) marius a. eriksen 2009
--- 
--- License     : BSD3
--- Maintainer  : marius@monkey.org
--- Stability   : experimental
--- Portability : GHC
--- 
--- Parse (simple) BERTs.
+-- | Parse (simple) BERTs.
 module Data.BERT.Parser
   ( parseTerm
   ) where

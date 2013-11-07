@@ -1,13 +1,4 @@
--- |
--- Module      : Network.BERT.Server
--- Copyright   : (c) marius a. eriksen 2009
--- 
--- License     : BSD3
--- Maintainer  : marius@monkey.org
--- Stability   : experimental
--- Portability : GHC
--- 
--- BERT-RPC server (<http://bert-rpc.org/>). This implements the
+-- | BERT-RPC server (<http://bert-rpc.org/>). This implements the
 -- client RPC call/reply logic. Only synchronous requests are
 -- supported at this time.
 

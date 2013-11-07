@@ -1,13 +1,4 @@
--- |
--- Module      : Data.BERT.Types
--- Copyright   : (c) marius a. eriksen 2009
--- 
--- License     : BSD3
--- Maintainer  : marius@monkey.org
--- Stability   : experimental
--- Portability : GHC
--- 
--- The Term type.
+-- | The Term type.
 module Data.BERT.Types
   ( Term(..)
   ) where

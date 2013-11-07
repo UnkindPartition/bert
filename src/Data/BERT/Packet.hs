@@ -1,13 +1,4 @@
--- |
--- Module      : Data.BERT.Packet
--- Copyright   : (c) marius a. eriksen 2009
--- 
--- License     : BSD3
--- Maintainer  : marius@monkey.org
--- Stability   : experimental
--- Portability : GHC
--- 
--- BERP (BERT packets) support.
+-- | BERP (BERT packets) support.
 module Data.BERT.Packet 
   ( Packet(..)
   , fromPacket

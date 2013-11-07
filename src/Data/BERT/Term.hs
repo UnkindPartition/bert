@@ -1,14 +1,5 @@
 {-# LANGUAGE OverlappingInstances, TypeSynonymInstances, FlexibleInstances #-}
--- |
--- Module      : Data.BERT.Term
--- Copyright   : (c) marius a. eriksen 2009
--- 
--- License     : BSD3
--- Maintainer  : marius@monkey.org
--- Stability   : experimental
--- Portability : GHC
--- 
--- Define BERT terms their binary encoding & decoding and a typeclass
+-- | Define BERT terms their binary encoding & decoding and a typeclass
 -- for converting Haskell values to BERT terms and back.
 -- 
 -- We define a number of convenient instances for 'BERT'. Users will

@@ -1,13 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, TypeFamilies, FlexibleContexts #-}
--- |
--- Module      : Network.BERT.Transport
--- Copyright   : (c) marius a. eriksen 2009
--- 
--- License     : BSD3
--- Maintainer  : marius@monkey.org
--- Stability   : experimental
--- Portability : GHC
-
+-- | Underlying transport abstraction
 module Network.BERT.Transport
   (
   -- * Core definitions

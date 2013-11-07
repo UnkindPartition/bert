@@ -1,14 +1,4 @@
--- |
--- Module      : Network.BERT.Client
--- Copyright   : (c) marius a. eriksen 2009
---
--- License     : BSD3
--- Maintainer  : marius@monkey.org
--- Stability   : experimental
--- Portability : GHC
---
--- BERT-RPC client (<http://bert-rpc.org/>). This implements the
--- client RPC call logic.
+-- | BERT-RPC client (<http://bert-rpc.org/>). This implements the client RPC call logic.
 
 module Network.BERT.Client
   ( Call, call
