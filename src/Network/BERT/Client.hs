@@ -28,14 +28,14 @@ type Call a = IO (Either Error a)
 -- | Call the @{mod, func, args}@ synchronously on the endpoint
 -- defined by @transport@, returning the results of the call or an
 -- error.
-call :: (BERT a, BERT b)
-     => Transport
+call :: (BERT a, BERT b, Transport t)
+     => t
      -> String
      -> String
      -> [a]
      -> Call b
 call transport mod fun args =
-  withTransport transport $ do
+  runSession transport $ do
     sendt $ TupleTerm [AtomTerm "call", AtomTerm mod, AtomTerm fun,
                        ListTerm $ map showBERT args]
     recvAndHandle

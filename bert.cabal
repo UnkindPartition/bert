@@ -26,7 +26,8 @@ library
                  parsec >= 2.0,
                  conduit >= 1.0,
                  network-conduit >= 1.0,
-                 binary-conduit >= 1.2
+                 binary-conduit >= 1.2,
+                 void
 
   exposed-modules:
     Data.BERT

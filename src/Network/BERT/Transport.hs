@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, TypeFamilies, FlexibleContexts #-}
 -- |
 -- Module      : Network.BERT.Transport
 -- Copyright   : (c) marius a. eriksen 2009
@@ -7,85 +7,133 @@
 -- Maintainer  : marius@monkey.org
 -- Stability   : experimental
 -- Portability : GHC
--- 
--- Transport for BERT-RPC client. Creates a transport from a URI,
--- leaving flexibility for several underlying transport
--- implementations. The current one is over sockets (TCP), with the
--- URI scheme bert, eg: <bert://localhost:9000>
--- 
--- The TCP transport will create a new connection for every request
--- (every block of 'withTransport'), which seems to be what the
--- current server implementations expect. It'd be great to have
--- persistent connections, however.
 
 module Network.BERT.Transport
-  ( Transport, fromURI, fromHostPort
-  -- ** Transport monad
-  , TransportM, withTransport
+  (
+  -- * Core definitions
+    Transport(..)
+  , Server(..)
+  , TransportM(..)
+  , SendPacketFn
+  -- * Sending and receiving packets
   , sendt, recvt, recvtForever
-  -- ** Server side
-  , servet
+  -- * TCP transport
+  , TCP(..)
+  , tcpClient
+  , TCPServer(..)
+  , tcpServer
+  -- * Utilities
+  , resolve
   ) where
 
 import Control.Monad
 import Control.Applicative
 import Control.Monad.Reader
-import Network.URI
+import Control.Exception
 import Network.Socket
-import Data.Maybe
-import Data.Binary
 import Data.Conduit
 import Data.Conduit.Network
-import qualified Network.Socket.ByteString.Lazy as LS
-import qualified System.Posix.Signals as Sig
+import Data.Conduit.Serialization.Binary
+import Data.Void
 
 import Data.BERT
 
--- | Defines a transport endpoint. Create with 'fromURI'.
-data Transport
-  = TcpTransport       SockAddr
-  | TcpServerTransport Socket
-    deriving (Show, Eq)
+-- | A function to send packets to the peer
+type SendPacketFn = Packet -> IO ()
 
-newtype TransportM a
-  = TransportM { runTransportM :: Sink Packet (ReaderT Socket IO) a }
-    deriving (Monad, MonadIO)
+-- | The transport monad allows receiving packets through the conduit,
+-- and sending functions via the provided 'SendPacketFn'
+type TransportM = ReaderT SendPacketFn (ConduitM Packet Void IO)
 
--- | Create a transport from the given URI.
-fromURI :: String -> IO Transport
-fromURI = fromURI_ . fromJust . parseURI
+-- | The class for transports
+class Transport t where
+  runSession :: t -> TransportM a -> IO a
+  closeConnection :: t -> IO ()
 
--- | Create a (TCP) transport from the given host and port
-fromHostPort :: (Integral a) => String -> a -> IO Transport
-fromHostPort "" port = 
-  return $ TcpTransport 
-         $ SockAddrInet (fromIntegral port) iNADDR_ANY
-fromHostPort host port = do
-  resolve host >>= return . TcpTransport 
-                          . SockAddrInet (fromIntegral port)
+class Transport (ServerTransport s) => Server s where
+  -- | The underlying transport used by the server
+  type ServerTransport s
 
-fromURI_ uri@(URI { uriScheme = "bert:"
-                  , uriAuthority = Just URIAuth 
-                                   { uriRegName = host
-                                   , uriPort = ':':port}}) =
-  fromHostPort host (fromIntegral . read $ port)
+  -- | This method should listen for incoming requests, establish some
+  -- sort of a connection (represented by the transport) and then invoke
+  -- the handling function
+  runServer :: s -> (ServerTransport s -> IO ()) -> IO ()
 
-servet :: Transport -> (Transport -> IO ()) -> IO ()
-servet (TcpTransport sa) dispatch = do
-  -- Ignore sigPIPE, which can be delivered upon writing to a closed
-  -- socket.
-  Sig.installHandler Sig.sigPIPE Sig.Ignore Nothing
+-- | The TCP transport
+data TCP = TCP {
+    getTcpSocket :: !Socket
+    -- ^ The socket used for communication.
+    --
+    -- The connection is assumed to be already established when this
+    -- structure is passed in.
+  }
 
-  sock <- socket AF_INET Stream 0
+tcpSendPacketFn :: TCP -> SendPacketFn
+tcpSendPacketFn (TCP sock) packet =
+  yield packet    $=
+  conduitEncode   $$
+  sinkSocket sock
+
+instance Transport TCP where
+  runSession tcp@(TCP sock) session =
+    sourceSocket sock $=
+    conduitDecode     $$
+    (runReaderT session (tcpSendPacketFn tcp))
+  closeConnection (TCP sock) = close sock
+
+-- | Establish a connection to the TCP server and return the resulting
+-- transport. It can be used to make multiple requests.
+tcpClient :: HostName -> PortNumber -> IO TCP
+tcpClient host port = do
+  bracket (socket AF_INET Stream defaultProtocol) close $ \sock -> do
+    sa <- SockAddrInet port <$> resolve host
+    connect sock sa
+    return $ TCP sock
+
+-- | The TCP server
+data TCPServer = TCPServer {
+    getTcpListenSocket :: !Socket
+    -- ^ The listening socket. Assumed to be bound but not listening yet.
+  }
+
+instance Server TCPServer where
+  type ServerTransport TCPServer = TCP
+
+  runServer (TCPServer sock) handle = do
+    listen sock 1
+
+    forever $ do
+      (clientsock, _) <- accept sock
+      setSocketOption clientsock NoDelay 1
+      handle $ TCP clientsock
+
+-- | A simple 'TCPServer' constructor, listens on all local interfaces.
+--
+-- If you want to bind only to some of the interfaces, create the socket
+-- manually using the functions from "Network.Socket".
+tcpServer :: PortNumber -> IO TCPServer
+tcpServer port = do
+  sock <- socket AF_INET Stream defaultProtocol
   setSocketOption sock ReuseAddr 1
-  bindSocket sock sa
-  listen sock 1
+  bindSocket sock $ SockAddrInet port iNADDR_ANY
+  return $ TCPServer sock
 
-  forever $ do
-    (clientsock, _) <- accept sock
-    setSocketOption clientsock NoDelay 1
-    dispatch $ TcpServerTransport clientsock
+-- | Send a term
+sendt :: Term -> TransportM ()
+sendt t = ask >>= \send -> liftIO . send . Packet $ t
 
+-- | Receive a term
+recvt :: TransportM (Maybe Term)
+recvt = fmap fromPacket <$> lift await
+
+-- | Execute an action for every incoming term, until the connection is
+-- closed
+recvtForever :: (Term -> TransportM a) -> TransportM ()
+recvtForever f =
+  ReaderT $ \send -> awaitForever $ flip runReaderT send . f . fromPacket
+
+-- | A simple address resolver
+resolve :: HostName -> IO HostAddress
 resolve host = do
   r <- getAddrInfo (Just hints) (Just host) Nothing
   case r of
@@ -93,32 +141,3 @@ resolve host = do
     _ -> fail $ "Failed to resolve " ++ host
   where
     hints = defaultHints { addrFamily = AF_INET }
-
--- | Execute the given transport monad action in the context of the
--- passed transport.
-withTransport :: Transport -> TransportM a -> IO a
-withTransport transport (TransportM m) = do
-  sock <-
-    case transport of
-      TcpTransport sa -> do
-        sock <- socket AF_INET Stream 0
-        connect sock sa
-        return sock
-      TcpServerTransport sock -> return sock
-
-  flip runReaderT sock $
-    sourceSocket sock $= decodePackets $$ m
-
--- | Send a term (inside the transport monad)
-sendt :: Term -> TransportM ()
-sendt t = TransportM $ do
-  sock <- ask
-  liftIO $ LS.sendAll sock $ encode (Packet t)
-  return ()
-
--- | Receive a term (inside the transport monad)
-recvt :: TransportM (Maybe Term)
-recvt = TransportM $ fmap fromPacket <$> await
-
-recvtForever :: (Term -> TransportM a) -> TransportM ()
-recvtForever f = TransportM $ awaitForever $ runTransportM . f . fromPacket

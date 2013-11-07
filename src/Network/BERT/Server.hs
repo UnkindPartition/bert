@@ -21,9 +21,11 @@ module Network.BERT.Server
 import Control.Concurrent
 import Control.Monad.Trans
 import Network.BERT.Transport
+import Network.Socket
 import Data.ByteString.Lazy.Char8 as C
 import Data.BERT
 import Text.Printf
+import qualified System.Posix.Signals as Sig
 
 data DispatchResult
   = Success Term
@@ -32,14 +34,22 @@ data DispatchResult
   | Undesignated String
     deriving (Eq, Show, Ord)
 
+data TcpServer = TcpServer !Socket
+
 -- | Serve from the given transport (forever), handling each request
 -- with the given dispatch function in a new thread.
-serve :: Transport 
-      -> (String -> String -> [Term] -> IO DispatchResult)
-      -> IO ()
-serve transport dispatch =
-  servet transport $ \t ->
-    (forkIO $ withTransport t $ handleCall dispatch) >> return ()
+serve
+  :: Server s
+  => s
+  -> (String -> String -> [Term] -> IO DispatchResult)
+  -> IO ()
+serve transport dispatch = do
+  -- Ignore sigPIPE, which can be delivered upon writing to a closed
+  -- socket.
+  Sig.installHandler Sig.sigPIPE Sig.Ignore Nothing
+
+  runServer transport $ \t ->
+    (forkIO $ runSession t $ handleCall dispatch) >> return ()
 
 handleCall dispatch = recvtForever handle
   where

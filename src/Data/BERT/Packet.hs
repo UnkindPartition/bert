@@ -11,17 +11,13 @@
 module Data.BERT.Packet 
   ( Packet(..)
   , fromPacket
-  , decodePackets
   ) where
 
 import Control.Monad
 import Data.ByteString.Lazy as L
-import Data.ByteString as BS
 import Data.Binary
 import Data.Binary.Put
 import Data.Binary.Get
-import Data.Conduit
-import Data.Conduit.Serialization.Binary
 
 import Data.BERT.Term ()
 import Data.BERT.Types
@@ -45,7 +41,3 @@ getPacket =
   liftM fromIntegral getWord32be >>= 
   getLazyByteString              >>= 
   return . Packet . decode
-
--- | Conduit which decodes a binary stream into BERT packets
-decodePackets :: MonadThrow m => Conduit BS.ByteString m Packet
-decodePackets = conduitGet getPacket
