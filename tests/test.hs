@@ -65,6 +65,7 @@ simplePackets = testGroup "Simple packets"
 
 networkTests = testGroup "Network"
   [ networkTest1
+  , networkTest2
   ]
 
 port :: PortNumber
@@ -81,3 +82,13 @@ networkTest1 = testCase "Simple call" $ do
     c <- tcpClient "localhost" port
     result <- call c "mod" "f" [IntTerm 3]
     result @?= Right (IntTerm 4)
+
+networkTest2 = testCase "5 calls per connection" $ do
+  t <- tcpServer port
+  let server = serve t $ \ "mod" "f" [IntTerm a, IntTerm b] -> return $ Success $ IntTerm (a+b)
+  withAsync server $ \_ -> do
+    delay
+    c <- tcpClient "localhost" port
+    forM_ [1..5] $ \x -> do
+      result <- call c "mod" "f" [IntTerm 3, IntTerm x]
+      result @?= Right (IntTerm (3+x))
