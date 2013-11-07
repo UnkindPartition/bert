@@ -4,13 +4,13 @@ version:       1.1.2.1
 build-type:    Simple
 license:       BSD3
 license-file:  LICENSE
-author:        marius a. eriksen
+author:        marius a. eriksen, Roman Cheplyaka
 category:      Data
 synopsis:      BERT implementation
 description:   Implements the BERT serialization and RPC protocols
                described at <http://bert-rpc.org/>.
 maintainer:    Roman Cheplyaka <roma@ro-che.info>
-copyright:     (c) 2009-2011 marius a. eriksen
+copyright:     (c) 2009-2011 marius a. eriksen; (c) 2013 Roman Cheplyaka
 homepage:      https://github.com/feuerbach/bert
 bug-reports:   https://github.com/feuerbach/bert/issues
 
