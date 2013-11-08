@@ -1,7 +1,10 @@
 -- | BERT-RPC client (<http://bert-rpc.org/>). This implements the client RPC call logic.
 
 module Network.BERT.Client
-  ( Call, call, tcpClient
+  ( -- * Example
+    -- $example
+    -- * Documentation
+    Call, call, tcpClient
   ) where
 
 import Data.BERT
@@ -41,3 +44,11 @@ call transport mod fun args =
 
     recvAndHandle =
       recvt >>= maybe (fail "No answer") handle
+
+-- $example
+--
+-- > t <- tcpClient "localhost" 8080
+-- > r <- call t "calc" "add" ([123, 3000]::[Int])
+-- > case r of
+-- >   Right res -> print (res :: Int)
+-- >   Left _    -> putStrLn "error"
