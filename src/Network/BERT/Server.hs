@@ -3,10 +3,12 @@
 -- supported at this time.
 
 module Network.BERT.Server 
-  ( DispatchResult(..)
-    -- ** Serve
+  (
+    -- * Example
     -- $example
-  , serve
+    -- * Documentation
+    serve
+  , DispatchResult(..)
   , tcpServer
   ) where
 

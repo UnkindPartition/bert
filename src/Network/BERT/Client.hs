@@ -4,7 +4,8 @@ module Network.BERT.Client
   ( -- * Example
     -- $example
     -- * Documentation
-    Call, call, tcpClient
+    call, tcpClient,
+    Call, Error(..)
   ) where
 
 import Data.BERT
