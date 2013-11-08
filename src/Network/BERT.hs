@@ -1,4 +1,4 @@
--- | BERT-RPC client (<http://bert-rpc.org/>). See "Network.BERT.Transport" and "Network.BERT.RPC" for more details.
+-- | BERT-RPC client (<http://bert-rpc.org/>). See "Network.BERT.Client" and "Network.BERT.Server" for more details.
 module Network.BERT
   ( module Network.BERT.Transport
   , module Network.BERT.Client
