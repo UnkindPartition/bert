@@ -1,3 +1,9 @@
+Version 1.2.1
+-------------
+
+* Fix the docs
+* Export the `Error` data type
+
 Version 1.2
 -----------
 
