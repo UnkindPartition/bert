@@ -77,12 +77,12 @@ handleCall dispatch = recvtForever handle
 
 -- $example
 -- 
--- To serve requests, create a transport and call 'serve' with a
+-- To serve requests, create a server and call 'serve' with a
 -- dispatch function.
 -- 
 -- > main = do
--- >   t <- fromHostPort "" 8080
--- >   serve t dispatch
+-- >   s <- tcpServer 8080
+-- >   serve s dispatch
 -- >
 -- > dispatch "calc" "add" [IntTerm a, IntTerm b] = 
 -- >   return $ Success $ IntTerm (a + b)

@@ -1,7 +1,7 @@
 BERT[-RPC] for Haskell
 ======================
 
-by marius a. eriksen (marius@monkey.org)
+Originally written by marius a. eriksen (marius@monkey.org)
 
 This is a [BERT](http://bert-rpc.org/) serializer/deserializer and
 [BERT-RPC](http://bert-rpc.org) client and server for
@@ -50,7 +50,7 @@ BERT-RPC client
 Create a transport to the server endpoint, and issue a (synchronous)
 call with it.
 
-    t <- fromURI "bert://localhost:8000"
+    t <- tcpClient "localhost" 8080
     r <- call t "calc" "add" ([123, 3000]::[Int])
     case r of
       Right res -> print (res :: Int)
@@ -67,7 +67,7 @@ dispatch function for incoming RPCs. The dispatch function is issued
 in a new thread for each incoming request.
 
     main = do
-      t <- fromHostPort "" 8080
+      s <- tcpServer 8080
       serve t dispatch
 
     dispatch "calc" "add" [IntTerm a, IntTerm b] = 
@@ -76,18 +76,3 @@ in a new thread for each incoming request.
       return NoSuchFunction
     dispatch _ _ _ = 
       return NoSuchModule
-
-Command line tool
------------------
-
-Also included is a tool, `bert` that is able to parse terms in the
-erlang grammar and issue requests.
-
-    $ bert call bert://localhost:8000 calc add 123 456 
-    reply: 579 
-    $ bert call bert://localhost:8000 errorcalc add 123 456 
-    error: ServerError {error, {user, 0, <<"RuntimeError">>, 
-    <<"abandon hope!">>, [<<"/Users/marius/Loc.. 
-    $ bert call bert://localhost:8000 calc add "{1, test, [5,6,7]}" 456 
-    error: ServerError {error, {user, 0, <<"TypeError">>, 
-    <<"can't convert Fixnum into Array">>, .. 
