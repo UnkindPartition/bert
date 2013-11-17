@@ -7,6 +7,7 @@ import Data.Char (chr)
 import Data.Map (Map)
 import qualified Data.ByteString.Lazy as L
 import qualified Data.Map as Map
+import Text.Printf
 
 import Control.Concurrent
 import Control.Concurrent.Async
@@ -29,11 +30,21 @@ import Network.BERT.Server
 instance (Serial m a, Ord a, Serial m b) => Serial m (Map a b) where
   series = liftM Map.fromList series
 
-type T a = a -> Bool
+type T a = a -> Either String String
+
+eqVerbose :: (Eq a, Show a) => a -> a -> Either String String
+eqVerbose x y =
+  let sx = show x
+      sy = show y
+  in
+  if x == y
+    then Right $ printf "%s == %s" sx sy
+    else Left  $ printf "%s /= %s" sx sy
+
 -- value -> Term -> encoded -> Term -> value
-t a = Right a == (readBERT . decode . encode . showBERT) a
+t a = Right a `eqVerbose` (readBERT . decode . encode . showBERT) a
 -- value -> Term -> Packet -> encoded -> Packet -> Term -> value
-p a = Right a == (readBERT . fromPacket . decode . encode . Packet . showBERT) a
+p a = Right a `eqVerbose` (readBERT . fromPacket . decode . encode . Packet . showBERT) a
 
 main = defaultMain $ localOption (SmallCheckDepth 4) $
   testGroup "Tests"

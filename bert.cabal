@@ -55,7 +55,7 @@ test-suite test
     network,
     bert,
     base,
-    smallcheck,
+    smallcheck >= 1.1,
     containers,
     bytestring,
     binary
