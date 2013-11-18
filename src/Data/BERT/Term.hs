@@ -188,26 +188,26 @@ instance Binary Term where
 
 -- | Binary encoding of a single term (without header)
 putTerm :: Term -> PutM ()
-putTerm (IntTerm value) = tag 98 >> put32i value
+putTerm (IntTerm value) = tag 98 >> put32s value
 putTerm (FloatTerm value) =
   tag 99 >> (putL . C.pack . pad $ printf "%15.15e" value)
   where
     pad s = s ++ replicate (31 - (length s)) '\0'
 putTerm (AtomTerm value)
-  | len < 256 = tag 100 >> put16i len >> (putL $ C.pack value)
+  | len < 256 = tag 100 >> put16u len >> (putL $ C.pack value)
   | otherwise = fail "BERT atom too long (>= 256)"
   where
     len = length value
 putTerm (TupleTerm value)
-  | len < 256 = tag 104 >> put8i len  >> forM_ value putTerm
-  | otherwise = tag 105 >> put32i len >> forM_ value putTerm
+  | len < 256 = tag 104 >> put8u len  >> forM_ value putTerm
+  | otherwise = tag 105 >> put32u len >> forM_ value putTerm
   where
     len = length value
 putTerm (BytelistTerm value)
-  | len < 65536 = tag 107 >> put16i len >> putL value
+  | len < 65536 = tag 107 >> put16u len >> putL value
   | otherwise = do  -- too big: encode as a list.
       tag 108
-      put32i len
+      put32u len
       forM_ (B.unpack value) $ \v -> do 
         tag 97
         putWord8 v
@@ -217,35 +217,35 @@ putTerm (ListTerm value)
   | len == 0 = putNil  -- this is mentioend in the BERT spec.
   | otherwise= do
       tag 108
-      put32i $ length value
+      put32u $ length value
       forM_ value putTerm
       putNil
   where 
     len = length value
     putNil = putWord8 106
-putTerm (BinaryTerm value) = tag 109 >> (put32i $ B.length value) >> putL value
-putTerm (BigintTerm value) = tag 110 >> putBigint put8i value
-putTerm (BigbigintTerm value) = tag 111 >> putBigint put32i value
+putTerm (BinaryTerm value) = tag 109 >> (put32u $ B.length value) >> putL value
+putTerm (BigintTerm value) = tag 110 >> putBigint put8u value
+putTerm (BigbigintTerm value) = tag 111 >> putBigint put32u value
 -- All other terms are composite:
 putTerm t = putTerm . compose $ t
 
 -- | Binary decoding of a single term (without header)
 getTerm :: Get Term
 getTerm = do
-  tag <- get8i
+  tag <- get8u
   case tag of
-    97  -> IntTerm <$> get8i
-    98  -> IntTerm <$> get32i
+    97  -> IntTerm <$> get8u
+    98  -> IntTerm <$> get32s
     99  -> getL 31 >>= return . FloatTerm . read . C.unpack
-    100 -> get16i >>= getL >>= return . AtomTerm . C.unpack
-    104 -> get8i >>= getN >>= tupleTerm
-    105 -> get32i >>= getN >>= tupleTerm 
+    100 -> get16u >>= getL >>= return . AtomTerm . C.unpack
+    104 -> get8u >>= getN >>= tupleTerm
+    105 -> get32u >>= getN >>= tupleTerm
     106 -> return $ ListTerm []
-    107 -> get16i >>= getL >>= return . BytelistTerm
-    108 -> get32i >>= getN >>= return . ListTerm
-    109 -> get32i >>= getL >>= return . BinaryTerm
-    110 -> getBigint get8i >>= return . BigintTerm . fromIntegral
-    111 -> getBigint get32i >>= return . BigintTerm . fromIntegral
+    107 -> get16u >>= getL >>= return . BytelistTerm
+    108 -> get32u >>= getN >>= return . ListTerm
+    109 -> get32u >>= getL >>= return . BinaryTerm
+    110 -> getBigint get8u >>= return . BigintTerm . fromIntegral
+    111 -> getBigint get32u >>= return . BigintTerm . fromIntegral
   where
     getN n = replicateM n getTerm
     -- First try & decode composite terms.
@@ -273,8 +273,8 @@ getTerm = do
 putBigint putter value = do
   putter len  -- TODO: verify size?
   if value < 0
-    then put8i 1
-    else put8i 0
+    then put8u 1
+    else put8u 0
   putL $ B.pack $ map (fromIntegral . digit) [0..len-1]
   where
     value'    = abs value
@@ -283,7 +283,7 @@ putBigint putter value = do
 
 getBigint getter = do
   len   <- fromIntegral <$> getter
-  sign  <- get8i
+  sign  <- get8u
   bytes <- getL len
   multiplier <- 
     case sign of 
@@ -294,7 +294,7 @@ getBigint getter = do
          $ foldl (\s (n, d) -> s + d*(256^n)) 0
          $ zip [0..len-1] (map fromIntegral $ B.unpack bytes)
 
--- Note about conversions:
+-- Note about put32s/get32s:
 --
 -- When dealing with 32-bit signed ints, we first convert between Int and
 -- Int32, and only then cast to Word32. This is to ensure put and get are
@@ -305,17 +305,20 @@ getBigint getter = do
 -- For an example of what can go wrong, see
 -- https://github.com/feuerbach/bert/issues/6
 
-put8i :: (Integral a) => a -> Put
-put8i = putWord8 . fromIntegral
-put16i :: (Integral a) => a -> Put
-put16i = putWord16be . fromIntegral
-put32i :: (Integral a) => a -> Put
-put32i = putWord32be . (fromIntegral :: Int32 -> Word32) . fromIntegral
+put8u :: (Integral a) => a -> Put
+put8u = putWord8 . fromIntegral
+put16u :: (Integral a) => a -> Put
+put16u = putWord16be . fromIntegral
+put32u :: (Integral a) => a -> Put
+put32u = putWord32be . fromIntegral
+put32s :: (Integral a) => a -> Put
+put32s = putWord32be . (fromIntegral :: Int32 -> Word32) . fromIntegral
 putL = putLazyByteString
 
-get8i  = fromIntegral <$> getWord8
-get16i = fromIntegral <$> getWord16be
-get32i = fromIntegral . (fromIntegral :: Word32 -> Int32) <$> getWord32be
+get8u  = fromIntegral <$> getWord8
+get16u = fromIntegral <$> getWord16be
+get32u = fromIntegral <$> getWord32be
+get32s = fromIntegral . (fromIntegral :: Word32 -> Int32) <$> getWord32be
 getL :: (Integral a) => a -> Get ByteString
 getL = getLazyByteString . fromIntegral
 
