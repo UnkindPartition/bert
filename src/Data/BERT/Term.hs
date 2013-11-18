@@ -186,6 +186,7 @@ instance Binary Term where
                  _   -> fail "bad magic"
 
 -- | Binary encoding of a single term (without header)
+putTerm :: Term -> PutM ()
 putTerm (IntTerm value) = tag 98 >> put32i value
 putTerm (FloatTerm value) =
   tag 99 >> (putL . C.pack . pad $ printf "%15.15e" value)
@@ -228,6 +229,7 @@ putTerm (BigbigintTerm value) = tag 111 >> putBigint put32i value
 putTerm t = putTerm . compose $ t
 
 -- | Binary decoding of a single term (without header)
+getTerm :: Get Term
 getTerm = do
   tag <- get8i
   case tag of
