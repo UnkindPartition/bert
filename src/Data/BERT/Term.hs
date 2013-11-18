@@ -12,6 +12,7 @@ import Control.Monad.Error
 import Control.Applicative
 import Data.Bits
 import Data.Char
+import Data.Int
 import Data.Binary
 import Data.Binary.Put
 import Data.Binary.Get
@@ -293,17 +294,28 @@ getBigint getter = do
          $ foldl (\s (n, d) -> s + d*(256^n)) 0
          $ zip [0..len-1] (map fromIntegral $ B.unpack bytes)
 
+-- Note about conversions:
+--
+-- When dealing with 32-bit signed ints, we first convert between Int and
+-- Int32, and only then cast to Word32. This is to ensure put and get are
+-- as close to inverse as possible. Coercing word types to and from
+-- integer types using 'fromIntegral' is guaranteed to preserve
+-- representation (see Notes in "Data.Int").
+--
+-- For an example of what can go wrong, see
+-- https://github.com/feuerbach/bert/issues/6
+
 put8i :: (Integral a) => a -> Put
 put8i = putWord8 . fromIntegral
 put16i :: (Integral a) => a -> Put
 put16i = putWord16be . fromIntegral
 put32i :: (Integral a) => a -> Put
-put32i = putWord32be . fromIntegral
+put32i = putWord32be . (fromIntegral :: Int32 -> Word32) . fromIntegral
 putL = putLazyByteString
 
 get8i  = fromIntegral <$> getWord8
 get16i = fromIntegral <$> getWord16be
-get32i = fromIntegral <$> getWord32be
+get32i = fromIntegral . (fromIntegral :: Word32 -> Int32) <$> getWord32be
 getL :: (Integral a) => a -> Get ByteString
 getL = getLazyByteString . fromIntegral
 
