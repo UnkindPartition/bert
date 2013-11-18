@@ -1,7 +1,7 @@
 {-# LANGUAGE OverlappingInstances, TypeSynonymInstances, FlexibleInstances #-}
 -- | Define BERT terms their binary encoding & decoding and a typeclass
 -- for converting Haskell values to BERT terms and back.
--- 
+--
 -- We define a number of convenient instances for 'BERT'. Users will
 -- probably want to define their own instances for composite types.
 module Data.BERT.Term
@@ -47,7 +47,7 @@ composeTime (mS, s, uS) = addUTCTime seconds zeroHour
 
 instance Show Term where
   -- Provide an erlang-compatible 'show' for terms. The results of
-  -- this should be parseable as erlang source. 
+  -- this should be parseable as erlang source.
   show = showTerm
 
 instance Read Term where
@@ -66,14 +66,14 @@ ct b rest = TupleTerm $ [AtomTerm "bert", AtomTerm b] ++ rest
 compose NilTerm = ListTerm []
 compose (BoolTerm True) = ct "true" []
 compose (BoolTerm False) = ct "false" []
-compose (DictionaryTerm kvs) = 
+compose (DictionaryTerm kvs) =
   ct "dict" [ListTerm $ map (\(k, v) -> TupleTerm [k, v]) kvs]
 compose (TimeTerm t) =
   ct "time" [IntTerm mS, IntTerm s, IntTerm uS]
   where
     (mS, s, uS) = decomposeTime t
-compose (RegexTerm s os) = 
-  ct "regex" [BytelistTerm (C.pack s), 
+compose (RegexTerm s os) =
+  ct "regex" [BytelistTerm (C.pack s),
               TupleTerm [ListTerm $ map AtomTerm os]]
 compose _ = error "invalid composite term"
 
@@ -83,15 +83,15 @@ showTerm (AtomTerm "") = ""
 showTerm (AtomTerm a@(x:xs))
   | isAsciiLower x = a
   | otherwise      = "'" ++ a ++ "'"
-showTerm (TupleTerm ts) = 
+showTerm (TupleTerm ts) =
   "{" ++ intercalate ", " (map showTerm ts) ++ "}"
 showTerm (BytelistTerm bs) = show $ C.unpack bs
-showTerm (ListTerm ts) = 
+showTerm (ListTerm ts) =
   "[" ++ intercalate ", " (map showTerm ts) ++ "]"
 showTerm (BinaryTerm b)
-  | all (isAscii . chr . fromIntegral) (B.unpack b) = 
+  | all (isAscii . chr . fromIntegral) (B.unpack b) =
       wrap $ "\"" ++ C.unpack b ++ "\""
-  | otherwise = 
+  | otherwise =
       wrap $ intercalate ", " $ map show $ B.unpack b
   where
     wrap x = "<<" ++ x ++ ">>"
@@ -159,21 +159,21 @@ instance (BERT a, BERT b) => BERT (a, b) where
 
 instance (BERT a, BERT b, BERT c) => BERT (a, b, c) where
   showBERT (a, b, c) = TupleTerm [showBERT a, showBERT b, showBERT c]
-  readBERT (TupleTerm [a, b, c]) = 
+  readBERT (TupleTerm [a, b, c]) =
     liftM3 (,,) (readBERT a) (readBERT b) (readBERT c)
   readBERT _ = fail "Invalid tuple(3) type"
 
 instance (BERT a, BERT b, BERT c, BERT d) => BERT (a, b, c, d) where
-  showBERT (a, b, c, d) = 
+  showBERT (a, b, c, d) =
     TupleTerm [showBERT a, showBERT b, showBERT c, showBERT d]
-  readBERT (TupleTerm [a, b, c, d]) = 
+  readBERT (TupleTerm [a, b, c, d]) =
     liftM4 (,,,) (readBERT a) (readBERT b) (readBERT c) (readBERT d)
   readBERT _ = fail "Invalid tuple(4) type"
 
 instance (Ord k, BERT k, BERT v) => BERT (Map k v) where
-  showBERT m = DictionaryTerm 
+  showBERT m = DictionaryTerm
              $ map (\(k, v) -> (showBERT k, showBERT v)) (Map.toList m)
-  readBERT (DictionaryTerm kvs) = 
+  readBERT (DictionaryTerm kvs) =
     mapM (\(k, v) -> liftM2 (,) (readBERT k) (readBERT v)) kvs >>=
       return . Map.fromList
   readBERT _ = fail "Invalid map type"
@@ -182,7 +182,7 @@ instance (Ord k, BERT k, BERT v) => BERT (Map k v) where
 instance Binary Term where
   put term = putWord8 131 >> putTerm term
   get      = getWord8 >>= \magic ->
-               case magic of 
+               case magic of
                  131 -> getTerm
                  _   -> fail "bad magic"
 
@@ -208,10 +208,10 @@ putTerm (BytelistTerm value)
   | otherwise = do  -- too big: encode as a list.
       tag 108
       put32u len
-      forM_ (B.unpack value) $ \v -> do 
+      forM_ (B.unpack value) $ \v -> do
         tag 97
         putWord8 v
-  where 
+  where
     len = B.length value
 putTerm (ListTerm value)
   | len == 0 = putNil  -- this is mentioend in the BERT spec.
@@ -220,7 +220,7 @@ putTerm (ListTerm value)
       put32u $ length value
       forM_ value putTerm
       putNil
-  where 
+  where
     len = length value
     putNil = putWord8 106
 putTerm (BinaryTerm value) = tag 109 >> (put32u $ B.length value) >> putL value
@@ -256,8 +256,8 @@ getTerm = do
       where
         toTuple (TupleTerm [k, v]) = return $ (k, v)
         toTuple _ = fail "invalid dictionary"
-    tupleTerm [AtomTerm "bert", AtomTerm "time", 
-               IntTerm mS, IntTerm s, IntTerm uS] = 
+    tupleTerm [AtomTerm "bert", AtomTerm "time",
+               IntTerm mS, IntTerm s, IntTerm uS] =
       return $ TimeTerm $ composeTime (mS, s, uS)
     tupleTerm [AtomTerm "bert", AtomTerm "regex",
                BytelistTerm s, ListTerm os] =
@@ -285,8 +285,8 @@ getBigint getter = do
   len   <- fromIntegral <$> getter
   sign  <- get8u
   bytes <- getL len
-  multiplier <- 
-    case sign of 
+  multiplier <-
+    case sign of
       0 -> return 1
       1 -> return (-1)
       _ -> fail "Invalid sign byte"
