@@ -1,3 +1,8 @@
+Version 1.2.1.1
+---------------
+
+* Fix integer (de)serialization on 64-bit platforms
+
 Version 1.2.1
 -------------
 
