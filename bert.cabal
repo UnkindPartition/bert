@@ -13,6 +13,9 @@ maintainer:    Roman Cheplyaka <roma@ro-che.info>
 copyright:     (c) 2009-2011 marius a. eriksen; (c) 2013 Roman Cheplyaka
 homepage:      https://github.com/feuerbach/bert
 bug-reports:   https://github.com/feuerbach/bert/issues
+extra-source-files:
+  README.md
+  CHANGELOG.md
 
 source-repository head
   type: git
