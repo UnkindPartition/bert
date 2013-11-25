@@ -2,7 +2,9 @@
 -- client RPC call/reply logic. Only synchronous requests are
 -- supported at this time.
 
-module Network.BERT.Server 
+{-# LANGUAGE CPP #-}
+
+module Network.BERT.Server
   (
     -- * Example
     -- $example
@@ -20,7 +22,9 @@ import Network.Socket
 import Data.ByteString.Lazy.Char8 as C
 import Data.BERT
 import Text.Printf
+#if !mingw32_HOST_OS
 import qualified System.Posix.Signals as Sig
+#endif
 
 data DispatchResult
   = Success Term
@@ -39,9 +43,11 @@ serve
   -> (String -> String -> [Term] -> IO DispatchResult)
   -> IO ()
 serve server dispatch = do
+#if !mingw32_HOST_OS
   -- Ignore sigPIPE, which can be delivered upon writing to a closed
   -- socket.
   Sig.installHandler Sig.sigPIPE Sig.Ignore Nothing
+#endif
 
   (runServer server $ \t ->
     (forkIO $ runSession t $ handleCall dispatch) >> return ())
