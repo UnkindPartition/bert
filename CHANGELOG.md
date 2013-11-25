@@ -1,3 +1,10 @@
+Version 1.2.2
+---------------
+
+* `Show` and `Read` instances for `Term` now use Haskell, not Erlang syntax. To
+  get the Erlang-syntax-formatted terms, `showTerm` and `parseTerm` are now
+  exposed.
+
 Version 1.2.1.2
 ---------------
 
