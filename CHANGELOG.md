@@ -1,3 +1,8 @@
+Version 1.2.1.2
+---------------
+
+* Fix Windows compatibility
+
 Version 1.2.1.1
 ---------------
 
