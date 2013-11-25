@@ -22,11 +22,11 @@ import Data.BERT.Types
 -- | Parse a simple BERT (erlang) term from a string in the erlang
 -- grammar. Does not attempt to decompose complex terms.
 parseTerm :: String -> Either ParseError Term
-parseTerm = parse p_term "term" 
+parseTerm = parse p_term "term"
 
 p_term :: Parser Term
-p_term = t <* spaces    
-  where 
+p_term = t <* spaces
+  where
     t =     IntTerm               <$> p_num (readSigned readDec)
         <|> FloatTerm             <$> p_num (readSigned readFloat)
         <|> AtomTerm              <$> p_atom
@@ -47,7 +47,7 @@ p_atom = unquoted <|> quoted
     quoted   = quote >> many1 letter <* quote
     quote    = char '\''
 
-p_seq open close elem = 
+p_seq open close elem =
   between (open >> spaces) (spaces >> close) $
     elem `sepBy` (spaces >> char ',' >> spaces)
 

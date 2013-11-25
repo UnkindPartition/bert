@@ -2,7 +2,9 @@
 -- client RPC call/reply logic. Only synchronous requests are
 -- supported at this time.
 
-module Network.BERT.Server 
+{-# LANGUAGE CPP #-}
+
+module Network.BERT.Server
   (
     -- * Example
     -- $example
@@ -20,7 +22,9 @@ import Network.Socket
 import Data.ByteString.Lazy.Char8 as C
 import Data.BERT
 import Text.Printf
+#if !mingw32_HOST_OS
 import qualified System.Posix.Signals as Sig
+#endif
 
 data DispatchResult
   = Success Term
@@ -39,9 +43,11 @@ serve
   -> (String -> String -> [Term] -> IO DispatchResult)
   -> IO ()
 serve server dispatch = do
+#if !mingw32_HOST_OS
   -- Ignore sigPIPE, which can be delivered upon writing to a closed
   -- socket.
   Sig.installHandler Sig.sigPIPE Sig.Ignore Nothing
+#endif
 
   (runServer server $ \t ->
     (forkIO $ runSession t $ handleCall dispatch) >> return ())
@@ -55,38 +61,38 @@ handleCall dispatch = recvtForever handle
     handle (TupleTerm [AtomTerm "info", AtomTerm "cache", _]) =
       return () -- Ignore caching requests.
     handle (TupleTerm [
-             AtomTerm "call", AtomTerm mod, 
+             AtomTerm "call", AtomTerm mod,
              AtomTerm fun, ListTerm args]) = do
       res <- liftIO $ dispatch mod fun args
       case res of
-        Success term -> 
+        Success term ->
           sendt $ TupleTerm [AtomTerm "reply", term]
         NoSuchModule ->
-          sendErr "server" 1 "BERTError" 
+          sendErr "server" 1 "BERTError"
                   (printf "no such module \"%s\"" mod :: String) []
         NoSuchFunction ->
-          sendErr "server" 2 "BERTError" 
+          sendErr "server" 2 "BERTError"
                   (printf "no such function \"%s\"" fun :: String) []
         Undesignated detail ->
           sendErr "server" 0 "HandlerError" detail []
 
-    sendErr etype ecode eclass detail backtrace = 
+    sendErr etype ecode eclass detail backtrace =
       sendt $ TupleTerm [
-        AtomTerm "error", 
+        AtomTerm "error",
         TupleTerm [
-          AtomTerm etype, IntTerm ecode, BinaryTerm . C.pack $ eclass, 
+          AtomTerm etype, IntTerm ecode, BinaryTerm . C.pack $ eclass,
           ListTerm $ Prelude.map (BinaryTerm . C.pack) backtrace]]
 
 -- $example
--- 
+--
 -- To serve requests, create a server and call 'serve' with a
 -- dispatch function.
--- 
+--
 -- > main = do
 -- >   s <- tcpServer 8080
 -- >   serve s dispatch
 -- >
--- > dispatch "calc" "add" [IntTerm a, IntTerm b] = 
+-- > dispatch "calc" "add" [IntTerm a, IntTerm b] =
 -- >   return $ Success $ IntTerm (a + b)
 -- > dispatch "calc" _ _ =
 -- >   return NoSuchFunction

@@ -1,5 +1,5 @@
 -- | BERP (BERT packets) support.
-module Data.BERT.Packet 
+module Data.BERT.Packet
   ( Packet(..)
   , fromPacket
   ) where
@@ -21,7 +21,7 @@ data Packet
 fromPacket (Packet t) = t
 
 instance Binary Packet where
-  put (Packet term) = 
+  put (Packet term) =
     putWord32be (fromIntegral len) >> putLazyByteString encoded
     where encoded = encode term
           len     = L.length encoded
@@ -29,6 +29,6 @@ instance Binary Packet where
   get = getPacket
 
 getPacket =
-  liftM fromIntegral getWord32be >>= 
-  getLazyByteString              >>= 
+  liftM fromIntegral getWord32be >>=
+  getLazyByteString              >>=
   return . Packet . decode
