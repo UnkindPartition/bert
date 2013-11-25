@@ -24,5 +24,4 @@ data Term
   | DictionaryTerm [(Term, Term)]
   | TimeTerm       UTCTime
   | RegexTerm      String [String]
-    deriving (Eq, Ord)
-
+    deriving (Eq, Ord, Show, Read)

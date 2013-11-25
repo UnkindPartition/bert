@@ -6,6 +6,8 @@
 -- probably want to define their own instances for composite types.
 module Data.BERT.Term
   ( BERT(..)
+  , showTerm
+  , parseTerm
   ) where
 
 import Control.Monad.Error
@@ -44,19 +46,6 @@ composeTime (mS, s, uS) = addUTCTime seconds zeroHour
     s'      = fromIntegral s
     uS'     = fromIntegral uS
     seconds = ((mS' * 1000000) + s' + (uS' / 1000000))
-
-instance Show Term where
-  -- Provide an erlang-compatible 'show' for terms. The results of
-  -- this should be parseable as erlang source.
-  show = showTerm
-
-instance Read Term where
-  readsPrec _ s =
-    case parseTerm s of
-      -- XXX TODO TODO XXX - normalize composite terms? (ie. we'd need
-      -- a "decompose")
-      Right t -> [(t, "")]
-      Left _  -> []
 
 -- Another design would be to split the Term type into
 -- SimpleTerm|CompositeTerm, and then do everything in one go, but
