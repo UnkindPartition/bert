@@ -68,7 +68,7 @@ in a new thread for each incoming request.
 
     main = do
       s <- tcpServer 8080
-      serve t dispatch
+      serve s dispatch
 
     dispatch "calc" "add" [IntTerm a, IntTerm b] = 
       return $ Success $ IntTerm (a + b)
