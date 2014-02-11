@@ -76,3 +76,11 @@ in a new thread for each incoming request.
       return NoSuchFunction
     dispatch _ _ _ = 
       return NoSuchModule
+
+Maintainers
+-----------
+
+[Roman Cheplyaka](https://github.com/feuerbach) is the primary maintainer.
+
+[Oleksandr Manzyuk](https://github.com/manzyuk) is the backup maintainer. Please
+get in touch with him if the primary maintainer cannot be reached.
