@@ -74,7 +74,7 @@ instance Transport TCP where
     sourceSocket sock $=
     conduitDecode     $$
     (runReaderT session (tcpSendPacketFn tcp))
-  closeConnection (TCP sock) = close sock
+  closeConnection (TCP sock) = sClose sock
 
 -- | Establish a connection to the TCP server and return the resulting
 -- transport. It can be used to make multiple requests.
@@ -102,7 +102,7 @@ instance Server TCPServer where
       setSocketOption clientsock NoDelay 1
       handle $ TCP clientsock
 
-  cleanup (TCPServer sock) = close sock
+  cleanup (TCPServer sock) = sClose sock
 
 -- | A simple 'TCPServer' constructor, listens on all local interfaces.
 --
