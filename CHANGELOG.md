@@ -1,3 +1,8 @@
+Version 1.2.2.2
+---------------
+
+Migrate from network-conduit (which is deprecated) to conduit-extra
+
 Version 1.2.2.1
 ---------------
 
