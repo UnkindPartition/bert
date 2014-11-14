@@ -21,7 +21,7 @@ module Network.BERT.Transport
 import Control.Monad
 import Control.Applicative
 import Control.Monad.Reader
-import Network.Socket
+import Network.Socket as Net
 import Data.Conduit
 import Data.Conduit.Network
 import Data.Conduit.Serialization.Binary
@@ -82,7 +82,7 @@ tcpClient :: HostName -> PortNumber -> IO TCP
 tcpClient host port = do
   sock <- socket AF_INET Stream defaultProtocol
   sa <- SockAddrInet port <$> resolve host
-  connect sock sa
+  Net.connect sock sa
   return $ TCP sock
 
 -- | The TCP server
