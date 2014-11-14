@@ -1,3 +1,8 @@
+Version 1.2.2.3
+---------------
+
+Fix compatibility with recent conduit.
+
 Version 1.2.2.2
 ---------------
 
