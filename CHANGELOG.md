@@ -1,3 +1,8 @@
+Version 1.2.2.4
+---------------
+
+Fix compatibility with GHC 7.10
+
 Version 1.2.2.3
 ---------------
 
