@@ -1,4 +1,4 @@
-{-# LANGUAGE OverlappingInstances, TypeSynonymInstances #-}
+{-# LANGUAGE OverlappingInstances, TypeSynonymInstances, FlexibleContexts #-}
 -- | Parse (simple) BERTs.
 module Data.BERT.Parser
   ( parseTerm
