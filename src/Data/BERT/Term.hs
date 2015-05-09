@@ -10,7 +10,7 @@ module Data.BERT.Term
   , parseTerm
   ) where
 
-import Control.Monad.Error
+import Control.Monad
 import Control.Applicative
 import Data.Bits
 import Data.Char
