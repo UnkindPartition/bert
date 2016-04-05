@@ -1,3 +1,9 @@
+Version 1.2.2.5
+---------------
+
+* Fix a list deserialization bug
+* Serialize small ints compactly
+
 Version 1.2.2.4
 ---------------
 
