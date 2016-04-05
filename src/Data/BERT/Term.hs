@@ -231,12 +231,19 @@ getTerm = do
     105 -> get32u >>= getN >>= tupleTerm
     106 -> return $ ListTerm []
     107 -> get16u >>= getL >>= return . BytelistTerm
-    108 -> get32u >>= getN >>= return . ListTerm
+    108 -> get32u >>= \n -> getN n <* expectNil >>= return . ListTerm
     109 -> get32u >>= getL >>= return . BinaryTerm
     110 -> getBigint get8u >>= return . BigintTerm . fromIntegral
     111 -> getBigint get32u >>= return . BigintTerm . fromIntegral
   where
+    getN :: Int -> Get [Term]
     getN n = replicateM n getTerm
+    expectNil :: Get ()
+    expectNil = do
+      tag <- get8u
+      case tag of
+        106 -> return ()
+        _   -> fail $ "invalid list - expected list ending with Nil"
     -- First try & decode composite terms.
     tupleTerm [AtomTerm "bert", AtomTerm "true"]  = return $ BoolTerm True
     tupleTerm [AtomTerm "bert", AtomTerm "false"] = return $ BoolTerm False
@@ -304,9 +311,13 @@ put32s :: (Integral a) => a -> Put
 put32s = putWord32be . (fromIntegral :: Int32 -> Word32) . fromIntegral
 putL = putLazyByteString
 
+get8u :: (Integral a) => Get a
 get8u  = fromIntegral <$> getWord8
+get16u :: (Integral a) => Get a
 get16u = fromIntegral <$> getWord16be
+get32u :: (Integral a) => Get a
 get32u = fromIntegral <$> getWord32be
+get32s :: (Integral a) => Get a
 get32s = fromIntegral . (fromIntegral :: Word32 -> Int32) <$> getWord32be
 getL :: (Integral a) => a -> Get ByteString
 getL = getLazyByteString . fromIntegral
