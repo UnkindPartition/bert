@@ -203,7 +203,7 @@ putTerm (BytelistTerm value)
   where
     len = B.length value
 putTerm (ListTerm value)
-  | len == 0 = putNil  -- this is mentioend in the BERT spec.
+  | len == 0 = putNil  -- this is mentioned in the BERT spec.
   | otherwise= do
       tag 108
       put32u $ length value
