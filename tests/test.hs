@@ -153,7 +153,8 @@ ord' = fromIntegral . ord
 -- http://erlang.org/doc/apps/erts/erl_ext_dist.html
 specTests :: [TestTree]
 specTests =
-  [ thereAndBackAgainTest "INTEGER_EXT" (IntTerm 0x400) [131, 98, 0, 0, 4, 0]
+  [ thereAndBackAgainTest "SMAL_INTEGER_EXT" (IntTerm 5) [131, 97, 5]
+  , thereAndBackAgainTest "INTEGER_EXT" (IntTerm 0x400) [131, 98, 0, 0, 4, 0]
   , thereAndBackAgainTest "ATOM_EXT"
       (AtomTerm "foobar")
       ([131, 100, 0, 6] ++ map ord' "foobar")

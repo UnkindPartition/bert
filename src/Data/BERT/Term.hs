@@ -177,7 +177,9 @@ instance Binary Term where
 
 -- | Binary encoding of a single term (without header)
 putTerm :: Term -> PutM ()
-putTerm (IntTerm value) = tag 98 >> put32s value
+putTerm (IntTerm value)
+  | 0 <= value && value < 256 = tag 97 >> put8u value
+  | otherwise                 = tag 98 >> put32s value
 putTerm (FloatTerm value) =
   tag 99 >> (putL . C.pack . pad $ printf "%15.15e" value)
   where
